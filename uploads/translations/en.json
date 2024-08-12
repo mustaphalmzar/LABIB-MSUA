@@ -1,0 +1,18 @@
+{
+    "lang": "en",
+    "title": "Image Processor",
+    "header": "Enhance Your Image",
+    "description": "Upload your image, customize settings, and process it with just a click.",
+    "upload_label": "Upload Image:",
+    "name_label": "New Image Name:",
+    "width_label": "Width (px):",
+    "height_label": "Height (px):",
+    "dpi_label": "Image Quality (DPI):",
+    "background_label": "Background:",
+    "background_with": "With Background",
+    "background_without": "Without Background",
+    "process_button": "Process Image",
+    "new_name_label": "New Name",
+    "format_label": "Format",
+    "download_button": "Download Processed Image"
+}

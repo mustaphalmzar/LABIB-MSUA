@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="{{ translation['lang'] }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ translation['title'] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        {{ translation['header'] }}
+        <div class="lang-select">
+            <select onchange="changeLanguage(this)">
+                <option value="en" {% if translation['lang'] == 'en' %}selected{% endif %}>English</option>
+                <option value="ar" {% if translation['lang'] == 'ar' %}selected{% endif %}>العربية</option>
+            </select>
+        </div>
+    </header>
+
+    <form action="{{ url_for('process_image') }}" method="POST" enctype="multipart/form-data">
+        <h2>{{ translation['header'] }}</h2>
+        <p>{{ translation['description'] }}</p>
+
+        <label for="image">{{ translation['upload_label'] }}</label>
+        <input type="file" id="image" name="image" required><br><br>
+
+        <label for="new_name">{{ translation['name_label'] }}</label>
+        <input type="text" id="new_name" name="new_name"><br><br>
+
+        <label for="width">{{ translation['width_label'] }}</label>
+        <input type="number" id="width" name="width"><br><br>
+
+        <label for="height">{{ translation['height_label'] }}</label>
+        <input type="number" id="height" name="height"><br><br>
+
+        <label for="dpi">{{ translation['dpi_label'] }}</label>
+        <select id="dpi" name="dpi">
+            <option value="72">72 DPI</option>
+            <option value="300">300 DPI</option>
+        </select><br><br>
+
+        <button type="submit">{{ translation['process_button'] }}</button>
+    </form>
+
+    <script>
+        function changeLanguage(select) {
+            const lang = select.value;
+            window.location.href = `/?lang=${lang}`;
+        }
+    </script>
+</body>
+</html>

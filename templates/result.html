@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="{{ translation['lang'] }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ translation['title'] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        {{ translation['header'] }}
+        <div class="lang-select">
+            <select onchange="changeLanguage(this)">
+                <option value="en" {% if translation['lang'] == 'en' %}selected{% endif %}>English</option>
+                <option value="ar" {% if translation['lang'] == 'ar' %}selected{% endif %}>العربية</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="result-container">
+        <h2>{{ translation['header'] }}</h2>
+        <p>{{ translation['new_name_label'] }}: {{ new_name }}</p>
+        <p>{{ translation['width_label'] }}: {{ width }} px</p>
+        <p>{{ translation['height_label'] }}: {{ height }} px</p>
+        <p>{{ translation['dpi_label'] }}: {{ dpi }}</p>
+        <p>{{ translation['format_label'] }}: {{ file_format }}</p>
+        <a href="{{ url_for('download_file', filename=filename) }}">{{ translation['download_button'] }}</a>
+    </div>
+
+    <script>
+        function changeLanguage(select) {
+            const lang = select.value;
+            window.location.href = `/?lang=${lang}`;
+        }
+    </script>
+</body>
+</html>

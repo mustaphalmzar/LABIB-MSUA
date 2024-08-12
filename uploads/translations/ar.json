@@ -1,0 +1,18 @@
+{
+    "lang": "ar",
+    "title": "معالجة الصور",
+    "header": "تحسين صورتك",
+    "description": "قم بتحميل صورتك، تخصيص الإعدادات، ومعالجتها بضغطة واحدة.",
+    "upload_label": "تحميل الصورة:",
+    "name_label": "اسم الصورة الجديدة:",
+    "width_label": "العرض (px):",
+    "height_label": "الارتفاع (px):",
+    "dpi_label": "جودة الصورة (DPI):",
+    "background_label": "الخلفية:",
+    "background_with": "مع خلفية",
+    "background_without": "بدون خلفية",
+    "process_button": "معالجة الصورة",
+    "new_name_label": "الاسم الجديد",
+    "format_label": "الصيغة",
+    "download_button": "تحميل الصورة المعالجة"
+}
