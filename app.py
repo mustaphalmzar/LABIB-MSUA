@@ -77,4 +77,5 @@ if __name__ == '__main__':
         os.makedirs(PROCESSED_FOLDER)
     if not os.path.exists(TRANSLATIONS_FOLDER):
         os.makedirs(TRANSLATIONS_FOLDER)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080)
+
