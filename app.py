@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect
 import cloudinary
 import cloudinary.uploader
+import requests
+from PIL import Image, ImageEnhance
 import os
 import json
+import io
 
 app = Flask(__name__)
 
@@ -13,6 +16,8 @@ cloudinary.config(
     api_secret='5A325nu-ZbcLhjeQT10-R8voP_s'  # استبدل بالقيمة الخاصة بك
 )
 
+REMOVE_BG_API_KEY = 'nCNkwVB1NRraJuYjHwohjmVk'  # API الخاص بـ remove.bg
+
 TRANSLATIONS_FOLDER = 'translations'
 
 def load_translation(language):
@@ -21,6 +26,18 @@ def load_translation(language):
         with open(translation_file, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
+
+def remove_bg(image_data):
+    response = requests.post(
+        'https://api.remove.bg/v1.0/removebg',
+        files={'image_file': image_data},
+        data={'size': 'auto'},
+        headers={'X-Api-Key': REMOVE_BG_API_KEY}
+    )
+    if response.status_code == 200:
+        return Image.open(io.BytesIO(response.content))
+    else:
+        raise Exception(f"Error removing background: {response.status_code}, {response.text}")
 
 @app.route('/')
 def index():
@@ -36,11 +53,39 @@ def process_image():
     if file.filename == '':
         return "No selected file"
 
-    # احصل على اسم الصورة الجديد من المستخدم
-    new_image_name = request.form.get('new_name', os.path.splitext(file.filename)[0])
+    # معالجة الصورة محليًا
+    img = Image.open(file)
+    
+    # إزالة البيانات الوصفية
+    data = list(img.getdata())
+    img_without_metadata = Image.new(img.mode, img.size)
+    img_without_metadata.putdata(data)
 
+    # إزالة الخلفية إذا كان المستخدم يريد ذلك
+    if request.form.get('remove_bg'):
+        img_without_metadata = remove_bg(file)
+
+    # تغيير DPI إذا تم تحديده
+    dpi = int(request.form.get('dpi', 72))
+    
+    # تغيير العرض والارتفاع
+    width = int(request.form.get('width', img.width))
+    height = int(request.form.get('height', img.height))
+    img_without_metadata = img_without_metadata.resize((width, height), Image.ANTIALIAS)
+    
+    # تحسين جودة الصورة
+    enhancer = ImageEnhance.Sharpness(img_without_metadata)
+    img_without_metadata = enhancer.enhance(2.0)  # زيادة الحدة
+    enhancer = ImageEnhance.Contrast(img_without_metadata)
+    img_without_metadata = enhancer.enhance(1.5)  # زيادة التباين
+    
+    # حفظ الصورة في الذاكرة المؤقتة
+    image_io = io.BytesIO()
+    img_without_metadata.save(image_io, format='PNG', dpi=(dpi, dpi))
+    image_io.seek(0)
+    
     # رفع الصورة إلى Cloudinary
-    upload_result = cloudinary.uploader.upload(file, public_id=new_image_name)
+    upload_result = cloudinary.uploader.upload(image_io, public_id=request.form.get('new_name', os.path.splitext(file.filename)[0]))
 
     # استخراج رابط الصورة المعالجة
     processed_image_url = upload_result['secure_url']
@@ -50,17 +95,12 @@ def process_image():
     
     return render_template('result.html', 
                            translation=translation, 
-                           new_name=new_image_name, 
+                           new_name=request.form.get('new_name', os.path.splitext(file.filename)[0]), 
                            width=upload_result['width'], 
                            height=upload_result['height'], 
-                           dpi='Original',  # Cloudinary لا يقوم بتغيير DPI
-                           file_format=upload_result['format'],  # صيغة الصورة
+                           dpi=dpi, 
+                           file_format=upload_result['format'], 
                            filename=processed_image_url)
-
-@app.route('/download_file/<filename>')
-def download_file(filename):
-    # في هذا السيناريو، يتم تقديم رابط مباشر لتنزيل الصورة من Cloudinary
-    return redirect(filename)
 
 if __name__ == '__main__':
     if not os.path.exists(TRANSLATIONS_FOLDER):
