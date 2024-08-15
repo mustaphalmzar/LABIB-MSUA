@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, redirect, url_for
 from PIL import Image
 import os
+import io
 import json
 
 app = Flask(__name__)
@@ -28,30 +29,28 @@ def index():
 def process_image():
     if 'image' not in request.files:
         return "No file part"
+    
     file = request.files['image']
     if file.filename == '':
         return "No selected file"
+    
+    try:
+        img = Image.open(file)
+    except Exception as e:
+        return f"Error processing image: {str(e)}"
 
-    filename = file.filename
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-
-    new_image_name = request.form.get('new_name', os.path.splitext(filename)[0])
+    new_image_name = request.form.get('new_name', os.path.splitext(file.filename)[0])
     width = request.form.get('width', '')
     height = request.form.get('height', '')
     dpi = int(request.form.get('dpi', 72))
-
-    img = Image.open(file_path)
 
     if width and height:
         width = int(width)
         height = int(height)
         img = img.resize((width, height))
 
-    file_extension = os.path.splitext(filename)[1].lower()
-    processed_file_path = os.path.join(app.config['PROCESSED_FOLDER'], new_image_name + file_extension)
-
-    img.save(processed_file_path, dpi=(dpi, dpi))
+    processed_file_path = os.path.join(app.config['PROCESSED_FOLDER'], new_image_name + '.png')
+    img.save(processed_file_path, dpi=(dpi, dpi), format='PNG')
 
     language = request.args.get('lang', 'en')
     translation = load_translation(language)
@@ -62,12 +61,14 @@ def process_image():
                            width=width if width else 'Original', 
                            height=height if height else 'Original', 
                            dpi=dpi, 
-                           file_format=file_extension,
-                           filename=new_image_name + file_extension)
+                           file_format='PNG',
+                           filename=new_image_name + '.png')
 
 @app.route('/download_file/<filename>')
 def download_file(filename):
     file_path = os.path.join(app.config['PROCESSED_FOLDER'], filename)
+    if not os.path.exists(file_path):
+        return "File not found", 404
     return send_file(file_path, as_attachment=True)
 
 if __name__ == '__main__':
