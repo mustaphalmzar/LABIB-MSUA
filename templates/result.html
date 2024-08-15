@@ -24,7 +24,7 @@
         <p>{{ translation['height_label'] }}: {{ height }} px</p>
         <p>{{ translation['dpi_label'] }}: {{ dpi }}</p>
         <p>{{ translation['format_label'] }}: {{ file_format }}</p>
-        <a href="{{ url_for('download_file', filename=filename) }}">{{ translation['download_button'] }}</a>
+        <a href="{{ filename }}" download>{{ translation['download_button'] }}</a>
     </div>
 
     <script>

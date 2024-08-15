@@ -53,7 +53,7 @@ def process_image():
                            new_name=new_image_name, 
                            width=upload_result['width'], 
                            height=upload_result['height'], 
-                           dpi=upload_result.get('dpi', 'Original'), 
+                           dpi='Original',  # Cloudinary لا يقوم بتغيير DPI
                            file_format=upload_result['format'],  # صيغة الصورة
                            filename=processed_image_url)
 
