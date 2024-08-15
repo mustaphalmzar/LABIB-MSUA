@@ -1,16 +1,19 @@
-from flask import Flask, render_template, request, send_file
-from PIL import Image, ImageEnhance
+from flask import Flask, render_template, request, redirect
+import cloudinary
+import cloudinary.uploader
 import os
 import json
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
-PROCESSED_FOLDER = 'static/images'
-TRANSLATIONS_FOLDER = 'translations'
+# إعداد Cloudinary
+cloudinary.config(
+    cloud_name='dl2xpanl2',  # استبدل بالقيمة الخاصة بك
+    api_key='475655655261754',  # استبدل بالقيمة الخاصة بك
+    api_secret='5A325nu-ZbcLhjeQT10-R8voP_s'  # استبدل بالقيمة الخاصة بك
+)
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
+TRANSLATIONS_FOLDER = 'translations'
 
 def load_translation(language):
     translation_file = os.path.join(TRANSLATIONS_FOLDER, f'{language}.json')
@@ -33,34 +36,14 @@ def process_image():
     if file.filename == '':
         return "No selected file"
 
-    # احفظ اسم الملف بدون الامتداد الأصلي
+    # احصل على اسم الصورة الجديد من المستخدم
     new_image_name = request.form.get('new_name', os.path.splitext(file.filename)[0])
-    width = request.form.get('width', '')
-    height = request.form.get('height', '')
-    dpi = int(request.form.get('dpi', 72))
 
-    img = Image.open(file)
-    img = img.convert('RGB')  # تحويل الصورة إلى RGB لتحسين الألوان
+    # رفع الصورة إلى Cloudinary
+    upload_result = cloudinary.uploader.upload(file, public_id=new_image_name)
 
-    # تحسين جودة الصورة
-    enhancer = ImageEnhance.Sharpness(img)
-    img = enhancer.enhance(2.0)  # زيادة الحدة
-    enhancer = ImageEnhance.Contrast(img)
-    img = enhancer.enhance(1.5)  # زيادة التباين
-
-    # إزالة جميع البيانات الوصفية
-    data = list(img.getdata())
-    img_without_metadata = Image.new(img.mode, img.size)
-    img_without_metadata.putdata(data)
-
-    if width and height:
-        width = int(width)
-        height = int(height)
-        img_without_metadata = img_without_metadata.resize((width, height))
-
-    # احفظ الصورة دائمًا بصيغة PNG
-    processed_file_path = os.path.join(app.config['PROCESSED_FOLDER'], new_image_name + '.png')
-    img_without_metadata.save(processed_file_path, format='PNG', dpi=(dpi, dpi))
+    # استخراج رابط الصورة المعالجة
+    processed_image_url = upload_result['secure_url']
 
     language = request.args.get('lang', 'en')
     translation = load_translation(language)
@@ -68,22 +51,18 @@ def process_image():
     return render_template('result.html', 
                            translation=translation, 
                            new_name=new_image_name, 
-                           width=width if width else 'Original', 
-                           height=height if height else 'Original', 
-                           dpi=dpi, 
-                           file_format='PNG',  # التأكد من أن التنسيق يعرض PNG
-                           filename=new_image_name + '.png')
+                           width=upload_result['width'], 
+                           height=upload_result['height'], 
+                           dpi=upload_result.get('dpi', 'Original'), 
+                           file_format=upload_result['format'],  # صيغة الصورة
+                           filename=processed_image_url)
 
 @app.route('/download_file/<filename>')
 def download_file(filename):
-    file_path = os.path.join(app.config['PROCESSED_FOLDER'], filename)
-    return send_file(file_path, as_attachment=True)
+    # في هذا السيناريو، يتم تقديم رابط مباشر لتنزيل الصورة من Cloudinary
+    return redirect(filename)
 
 if __name__ == '__main__':
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
-    if not os.path.exists(PROCESSED_FOLDER):
-        os.makedirs(PROCESSED_FOLDER)
     if not os.path.exists(TRANSLATIONS_FOLDER):
         os.makedirs(TRANSLATIONS_FOLDER)
     app.run(host='0.0.0.0', port=8080)
